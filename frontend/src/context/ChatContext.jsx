@@ -78,6 +78,8 @@ export const ChatProvider = ({ children }) => {
   const uploadFile = useCallback(async (file, type) => {
     if (!file || !chat?.id) return;
 
+    const isPdf = type === 'document' && file.name.toLowerCase().endsWith('.pdf');
+    const localPreviewUrl = isPdf ? URL.createObjectURL(file) : null;
     const formData = new FormData();
     formData.append('file', file);
     formData.append('chatId', chat.id);
@@ -93,10 +95,21 @@ export const ChatProvider = ({ children }) => {
         ? chatApi.uploadImage(formData, onUploadProgress)
         : chatApi.uploadDocument(formData, onUploadProgress);
       const { data } = await request;
-      setChat(data.chat);
+      const nextChat = data.chat;
+      if (localPreviewUrl && nextChat.document) {
+        nextChat.document = {
+          ...nextChat.document,
+          localPreviewUrl,
+          localPreviewType: 'pdf'
+        };
+      }
+      setChat(nextChat);
       setChats(data.chats || []);
       showToast(type === 'image' ? 'Image added to this chat' : 'Document processed successfully');
     } catch (error) {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
       showToast(getApiErrorMessage(error), 'error');
     } finally {
       setTimeout(() => setUploadProgress(0), 650);

@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import 'highlight.js/styles/atom-one-dark.css';
 import './styles.css';
 import App from './App.jsx';
 import { ChatProvider } from './context/ChatContext.jsx';

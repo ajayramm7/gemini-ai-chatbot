@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { FiCheck, FiCopy } from 'react-icons/fi';
 import { formatTime } from '../../utils/formatters';
+
+const MarkdownRenderer = lazy(() => import('./MarkdownRenderer.jsx'));
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user';
@@ -39,9 +38,9 @@ export default function MessageBubble({ message }) {
           {isUser ? (
             <p className="whitespace-pre-wrap text-sm md:text-[15px]">{message.content}</p>
           ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-              {message.content}
-            </ReactMarkdown>
+            <Suspense fallback={<p className="whitespace-pre-wrap text-sm md:text-[15px]">{message.content}</p>}>
+              <MarkdownRenderer>{message.content}</MarkdownRenderer>
+            </Suspense>
           )}
         </div>
         <div className="mt-2 flex items-center gap-2 text-xs text-white/38">

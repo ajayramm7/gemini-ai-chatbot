@@ -3,10 +3,20 @@ import { chatApi, getApiErrorMessage } from '../services/api';
 
 const ChatContext = createContext(null);
 
+const createLocalChat = () => ({
+  id: crypto.randomUUID(),
+  title: 'Gemini Chat',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  messages: [],
+  document: null,
+  image: null
+});
+
 export const ChatProvider = ({ children }) => {
-  const [chat, setChat] = useState(null);
+  const [chat, setChat] = useState(() => createLocalChat());
   const [chats, setChats] = useState([]);
-  const [isBooting, setIsBooting] = useState(true);
+  const [isBooting, setIsBooting] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [toast, setToast] = useState(null);
@@ -21,10 +31,15 @@ export const ChatProvider = ({ children }) => {
   }, []);
 
   const startNewChat = useCallback(async () => {
-    const { data } = await chatApi.newChat();
-    setChat(data.chat);
-    await refreshChats();
+    setChat(createLocalChat());
     showToast('Fresh chat started');
+
+    try {
+      await chatApi.newChat();
+      await refreshChats();
+    } catch (error) {
+      showToast(getApiErrorMessage(error), 'error');
+    }
   }, [refreshChats, showToast]);
 
   const loadChat = useCallback(async (chatId) => {
@@ -35,13 +50,9 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     const boot = async () => {
       try {
-        const { data } = await chatApi.createChat();
-        setChat(data.chat);
         await refreshChats();
       } catch (error) {
         showToast(getApiErrorMessage(error), 'error');
-      } finally {
-        setIsBooting(false);
       }
     };
 
